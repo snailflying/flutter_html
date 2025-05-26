@@ -1,4 +1,4 @@
-library;
+library flutter_html_table;
 
 import 'dart:math';
 
@@ -175,7 +175,9 @@ Widget _layoutCells(
           .where((c) => c.name == "col")
           .map((c) {
             final span = int.tryParse(c.attributes["span"] ?? "1") ?? 1;
-            final colWidth = c.attributes["width"];
+            //TODO: 大强 获取with逻辑可以优化
+            String? width = c.attributes["width"]?.split(":").last.split(";").first.trim();
+            final colWidth = width ?? c.attributes["style"]?.split(":").last.split(";").first.trim();
             return List.generate(span, (index) {
               if (colWidth != null && colWidth.endsWith("%")) {
                 if (!constraints.hasBoundedWidth) {
@@ -255,19 +257,18 @@ Widget _layoutCells(
           columnSpan: colspan,
           rowStart: rowi,
           rowSpan: rowspan,
-          child: CssBoxWidget(
-            style: child.style.merge(row.style),
-            child: SizedBox.expand(
-              child: Container(
-                alignment: _getCellAlignment(
-                    child,
-                    child.style.direction ??
-                        Directionality.of(context.buildContext!)),
-                child: CssBoxWidget.withInlineSpanChildren(
-                  children: [
-                    parsedCells[child] ?? const TextSpan(text: "error")
-                  ],
-                  style: Style(),
+          child: Container(
+            color: Colors.white,
+            child: CssBoxWidget(
+              style: child.style.merge(row.style),
+              child: SizedBox.expand(
+                child: Container(
+                  alignment:
+                  _getCellAlignment(child, child.style.direction ?? Directionality.of(context.buildContext!)),
+                  child: CssBoxWidget.withInlineSpanChildren(
+                    children: [parsedCells[child] ?? const TextSpan(text: "error")],
+                    style: Style(),
+                  ),
                 ),
               ),
             ),
@@ -288,22 +289,25 @@ Widget _layoutCells(
   // Create column tracks (insofar there were no colgroups that already defined them)
   List<TrackSize> finalColumnSizes = columnSizes.take(columnMax).toList();
   finalColumnSizes += List.generate(max(0, columnMax - finalColumnSizes.length),
-      (_) => const IntrinsicContentTrackSize());
+      (_) => const FlexibleTrackSize(1));
 
   if (finalColumnSizes.isEmpty || rowSizes.isEmpty) {
     // No actual cells to show
     return const SizedBox();
   }
 
-  return LayoutGrid(
-    gridFit: GridFit.loose,
-    columnSizes: finalColumnSizes,
-    rowSizes: rowSizes,
-    // TODO add style option for border-spacing
-    // rowGap: 2,
-    // columnGap: 2,
-    children: cells,
-  );
+  return Container(
+      padding: const EdgeInsets.all(1),
+      color: Colors.black.withOpacity(0.2),
+      child: LayoutGrid(
+        gridFit: GridFit.expand,
+        columnSizes: finalColumnSizes,
+        rowSizes: rowSizes,
+        // TODO add style option for border-spacing
+        rowGap: 1,
+        columnGap: 1,
+        children: cells,
+      ));
 }
 
 Alignment _getCellAlignment(TableCellElement cell, TextDirection alignment) {

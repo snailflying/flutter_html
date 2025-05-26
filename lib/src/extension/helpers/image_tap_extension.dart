@@ -55,6 +55,8 @@ class OnImageTapExtension extends ImageBuiltIn {
     final actualImage = children.keys.first;
 
     return WidgetSpan(
+      alignment: PlaceholderAlignment.middle,
+      baseline: TextBaseline.alphabetic,
       child: Builder(builder: (buildContext) {
         return GestureDetector(
           child: CssBoxWidget.withInlineSpanChildren(

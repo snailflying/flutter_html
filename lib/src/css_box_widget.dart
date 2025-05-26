@@ -105,17 +105,19 @@ class CssBoxWidget extends StatelessWidget {
         children.insert(0, inlineMarkerBox);
       }
     }
-
-    return Text.rich(
-      TextSpan(
-        style: style.generateTextStyle(),
-        children: children,
-      ),
-      textAlign: style.textAlign ?? TextAlign.start,
-      textDirection: style.direction,
-      maxLines: style.maxLines,
-      overflow: style.textOverflow ?? TextOverflow.clip,
-    );
+    return Container(
+      /// 宽度占满父级，避免居中不生效
+        width: double.infinity,
+        child: Text.rich(
+          TextSpan(
+            style: style.generateTextStyle(),
+            children: children,
+          ),
+          textAlign: style.textAlign ?? TextAlign.start,
+          textDirection: style.direction,
+          maxLines: style.maxLines,
+          overflow: style.textOverflow ?? TextOverflow.clip,
+        ));
   }
 
   static InlineSpan? _generateMarkerBoxSpan(Style style) {
@@ -509,18 +511,10 @@ class RenderCSSBox extends RenderBox
 
     // Calculate child size
     BoxConstraints childConstraints = constraints.copyWith(
-      maxWidth: (this.width.unit != Unit.auto)
-          ? this.width.value
-          : containingBlockSize.width -
-              (margins.left?.value ?? 0) -
-              (margins.right?.value ?? 0),
-      maxHeight: (this.height.unit != Unit.auto)
-          ? this.height.value
-          : containingBlockSize.height -
-              (margins.top?.value ?? 0) -
-              (margins.bottom?.value ?? 0),
-      minWidth: (this.width.unit != Unit.auto) ? this.width.value : 0,
-      minHeight: (this.height.unit != Unit.auto) ? this.height.value : 0,
+      maxWidth: _maxWidth(containingBlockSize),
+      maxHeight: _maxHeight(containingBlockSize),
+      minWidth: _minWidth(containingBlockSize),
+      minHeight: _minHeight(containingBlockSize),
     );
 
     if (markerBoxChild != null) {
@@ -575,6 +569,44 @@ class RenderCSSBox extends RenderBox
     }
 
     return _Sizes(constraints.constrain(Size(width, height)), childSize);
+  }
+
+  double _minHeight(Size containingBlockSize) {
+    if (height.unit != Unit.auto) {
+      return height.value;
+    }
+    return 0;
+  }
+
+  double _minWidth(Size containingBlockSize) {
+    if (width.unit != Unit.auto) {
+      return width.value;
+    }
+    return 0;
+  }
+
+  double _maxHeight(Size containingBlockSize) {
+    if (height.unit == Unit.percent) {
+      return height.value*containingBlockSize.height/100;
+    } else if (height.unit != Unit.auto) {
+      return height.value;
+    } else{
+      return containingBlockSize.height -
+          (margins.top?.value ?? 0) -
+          (margins.bottom?.value ?? 0);
+    }
+  }
+
+  double _maxWidth(Size containingBlockSize) {
+    if (width.unit == Unit.percent) {
+      return width.value*containingBlockSize.width/100;
+    }else if (width.unit != Unit.auto) {
+      return width.value;
+    } else{
+      return containingBlockSize.width -
+          (margins.left?.value ?? 0) -
+          (margins.right?.value ?? 0);
+    }
   }
 
   @override

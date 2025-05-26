@@ -1,12 +1,15 @@
 library;
 
-import 'package:chewie/chewie.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:video_player/video_player.dart';
+import 'package:flutter_html_video/adaptive_controls.dart';
 import 'package:html/dom.dart' as dom;
-import 'dart:io';
+import 'package:video_player/video_player.dart';
+
+import 'chewie.dart';
 
 /// [VideoHtmlExtension] adds support for the <video> tag to the flutter_html
 /// library.
@@ -28,10 +31,14 @@ class VideoHtmlExtension extends HtmlExtension {
       callback: videoControllerCallback,
     ));
   }
+
+  @override
+  void onDispose() {
+    super.onDispose();
+  }
 }
 
-typedef VideoControllerCallback = void Function(
-    dom.Element?, ChewieController, VideoPlayerController);
+typedef VideoControllerCallback = void Function(dom.Element?, CustomChewieController, VideoPlayerController);
 
 /// A VideoWidget for displaying within the HTML tree.
 class VideoWidget extends StatefulWidget {
@@ -52,14 +59,23 @@ class VideoWidget extends StatefulWidget {
   State<StatefulWidget> createState() => _VideoWidgetState();
 }
 
-class _VideoWidgetState extends State<VideoWidget> {
-  ChewieController? _chewieController;
+class _VideoWidgetState extends State<VideoWidget> with AutomaticKeepAliveClientMixin {
+  CustomChewieController? _chewieController;
   VideoPlayerController? _videoController;
   double? _width;
   double? _height;
 
+  //modify by 大强 横竖比修正[Start]
+  double? _widthVideo;
+  double? _heightVideo;
+
+  //modify by 大强 横竖比修正[End]
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
+    super.initState();
     final attributes = widget.context.attributes;
 
     final sources = <String?>[
@@ -86,30 +102,40 @@ class _VideoWidgetState extends State<VideoWidget> {
           _videoController = VideoPlayerController.networkUrl(sourceUri);
           break;
       }
-      _chewieController = ChewieController(
+      _chewieController = CustomChewieController(
         videoPlayerController: _videoController!,
-        placeholder:
-            attributes['poster'] != null && attributes['poster']!.isNotEmpty
-                ? Image.network(attributes['poster']!)
-                : Container(color: Colors.black),
+        placeholder: attributes['poster'] != null && attributes['poster']!.isNotEmpty
+            ? Image.network(attributes['poster']!)
+            : Container(color: Colors.black),
         autoPlay: attributes['autoplay'] != null,
         looping: attributes['loop'] != null,
         showControls: attributes['controls'] != null,
         autoInitialize: true,
-        aspectRatio:
-            _width == null || _height == null ? null : _width! / _height!,
-        deviceOrientationsOnEnterFullScreen:
-            widget.deviceOrientationsOnEnterFullScreen,
-        deviceOrientationsAfterFullScreen:
-            widget.deviceOrientationsAfterFullScreen,
+        customControls: const CustomAdaptiveControls(),
+        aspectRatio: _widthVideo == null || _heightVideo == null ? null : _widthVideo! / _heightVideo!,
+        deviceOrientationsOnEnterFullScreen: widget.deviceOrientationsOnEnterFullScreen,
+        deviceOrientationsAfterFullScreen: widget.deviceOrientationsAfterFullScreen,
       );
+      _videoController?.addListener(() {
+        try {
+          setState(() {
+            if (_videoController?.value.isInitialized == true) {
+              _widthVideo = _videoController?.value.size.width.toDouble();
+              _heightVideo = _videoController?.value.size.height.toDouble();
+              _chewieController = _chewieController?.copyWith(
+                  aspectRatio: _widthVideo == null || _heightVideo == null || _heightVideo == 0
+                      ? null
+                      : _widthVideo! / _heightVideo!);
+            }
+          });
+        } catch (e) {}
+      });
       widget.callback?.call(
         widget.context.element,
         _chewieController!,
         _videoController!,
       );
     }
-    super.initState();
   }
 
   @override
@@ -121,13 +147,15 @@ class _VideoWidgetState extends State<VideoWidget> {
 
   @override
   Widget build(BuildContext bContext) {
+    //fix:解决视频跳动问题(有时候展示，有时候隐藏)
+    //if (_chewieController == null || _videoController?.value.isInitialized != true) {
     if (_chewieController == null) {
       return const SizedBox(height: 0, width: 0);
     }
 
     return AspectRatio(
       aspectRatio: _width! / _height!,
-      child: Chewie(
+      child: CustomChewie(
         controller: _chewieController!,
       ),
     );

@@ -302,6 +302,11 @@ class Style {
   }
 
   TextStyle generateTextStyle() {
+    LineHeight? finalLineHeight = lineHeight != null
+        ? lineHeight?.units == "length"
+        ? LineHeight(lineHeight!.size! / (fontSize == null ? 14 : fontSize!.value) * 1.2)
+        : lineHeight
+        : lineHeight;
     return TextStyle(
       backgroundColor: (display?.isBlock ?? false) ? null : backgroundColor,
       color: color,
@@ -318,7 +323,7 @@ class Style {
       letterSpacing: letterSpacing,
       shadows: textShadow,
       wordSpacing: wordSpacing,
-      height: lineHeight?.size ?? 1.0,
+      height: finalLineHeight?.size ?? 1.0,
     );
   }
 

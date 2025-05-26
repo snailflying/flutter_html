@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/src/tree/image_element.dart';
 
 class ImageBuiltIn extends HtmlExtension {
   final String? dataEncoding;
@@ -18,6 +20,7 @@ class ImageBuiltIn extends HtmlExtension {
   final bool handleNetworkImages;
   final bool handleAssetImages;
   final bool handleDataImages;
+  final ImageStreamListener? imageStreamListener;
 
   const ImageBuiltIn({
     this.networkHeaders,
@@ -32,12 +35,13 @@ class ImageBuiltIn extends HtmlExtension {
     this.handleNetworkImages = true,
     this.handleAssetImages = true,
     this.handleDataImages = true,
+    this.imageStreamListener,
   });
 
   @override
   Set<String> get supportedTags => {
-        "img",
-      };
+    "img",
+  };
 
   @override
   bool matches(ExtensionContext context) {
@@ -51,8 +55,7 @@ class ImageBuiltIn extends HtmlExtension {
   }
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
     final parsedWidth = double.tryParse(context.attributes["width"] ?? "");
     final parsedHeight = double.tryParse(context.attributes["height"] ?? "");
 
@@ -92,8 +95,10 @@ class ImageBuiltIn extends HtmlExtension {
     }
 
     return WidgetSpan(
-      alignment: context.style!.verticalAlign
-          .toPlaceholderAlignment(context.style!.display),
+      //TODO: 去掉alignment by 刘志强
+      // alignment: context.style!.verticalAlign
+      //     .toPlaceholderAlignment(context.style!.display),
+      alignment: PlaceholderAlignment.middle,
       baseline: TextBaseline.alphabetic,
       child: CssBoxWidget(
         style: imageStyle,
@@ -103,8 +108,8 @@ class ImageBuiltIn extends HtmlExtension {
     );
   }
 
-  static RegExp get dataUriFormat => RegExp(
-      r"^(?<scheme>data):(?<mime>image/[\w+\-.]+);*(?<encoding>base64)?,\s*(?<data>.*)");
+  static RegExp get dataUriFormat =>
+      RegExp(r"^(?<scheme>data):(?<mime>image/[\w+\-.]+);*(?<encoding>base64)?,\s*(?<data>.*)");
 
   bool _matchesBase64Image(ExtensionContext context) {
     final attributes = context.attributes;
@@ -117,11 +122,9 @@ class ImageBuiltIn extends HtmlExtension {
 
     return context.elementName == "img" &&
         dataUri != null &&
-        (mimeTypes == null ||
-            mimeTypes!.contains(dataUri.namedGroup('mime'))) &&
+        (mimeTypes == null || mimeTypes!.contains(dataUri.namedGroup('mime'))) &&
         dataUri.namedGroup('mime') != 'image/svg+xml' &&
-        (dataEncoding == null ||
-            dataUri.namedGroup('encoding') == dataEncoding);
+        (dataEncoding == null || dataUri.namedGroup('encoding') == dataEncoding);
   }
 
   bool _matchesAssetImage(ExtensionContext context) {
@@ -131,8 +134,7 @@ class ImageBuiltIn extends HtmlExtension {
         attributes['src'] != null &&
         !attributes['src']!.endsWith(".svg") &&
         attributes['src']!.startsWith(assetSchema) &&
-        (fileExtensions == null ||
-            attributes['src']!.endsWithAnyFileExtension(fileExtensions!));
+        (fileExtensions == null || attributes['src']!.endsWithAnyFileExtension(fileExtensions!));
   }
 
   bool _matchesNetworkImage(ExtensionContext context) {
@@ -151,15 +153,14 @@ class ImageBuiltIn extends HtmlExtension {
         networkSchemas.contains(src.scheme) &&
         !src.path.endsWith(".svg") &&
         (networkDomains == null || networkDomains!.contains(src.host)) &&
-        (fileExtensions == null ||
-            src.path.endsWithAnyFileExtension(fileExtensions!));
+        (fileExtensions == null || src.path.endsWithAnyFileExtension(fileExtensions!));
   }
 
   Widget _base64ImageRender(ExtensionContext context, Style imageStyle) {
     final element = context.styledElement as ImageElement;
     final decodedImage = base64.decode(element.src.split("base64,")[1].trim());
 
-    return Image.memory(
+    Image imageMemory = Image.memory(
       decodedImage,
       width: imageStyle.width?.value,
       height: imageStyle.height?.value,
@@ -171,13 +172,19 @@ class ImageBuiltIn extends HtmlExtension {
         );
       },
     );
+    if (imageStreamListener != null) {
+      ImageProvider provider = imageMemory.image;
+      provider.resolve(ImageConfiguration.empty).addListener(imageStreamListener!);
+    }
+
+    return imageMemory;
   }
 
   Widget _assetImageRender(ExtensionContext context, Style imageStyle) {
     final element = context.styledElement as ImageElement;
     final assetPath = element.src.replaceFirst('asset:', '');
 
-    return Image.asset(
+    Image image = Image.asset(
       assetPath,
       width: imageStyle.width?.value,
       height: imageStyle.height?.value,
@@ -191,27 +198,52 @@ class ImageBuiltIn extends HtmlExtension {
         );
       },
     );
+    if (imageStreamListener != null) {
+      ImageProvider provider = image.image;
+      provider.resolve(ImageConfiguration.empty).addListener(imageStreamListener!);
+    }
+    return image;
   }
 
   Widget _networkImageRender(ExtensionContext context, Style imageStyle) {
     final element = context.styledElement as ImageElement;
+    // 获取设备的像素密度（devicePixelRatio）
+    BuildContext? ctx = context.buildContext;
+    bool hasCtx = ctx != null;
+    double? pixelRatio = (hasCtx ? MediaQuery.of(context.buildContext!).devicePixelRatio : 3.0) - 0.7;
 
+    // 获取屏幕的逻辑宽度和高度（单位是逻辑像素）
+    double screenWidth = hasCtx ? MediaQuery.of(context.buildContext!).size.width : 375;
+    CachedNetworkImage image = CachedNetworkImage(
+      imageUrl: element.src,
+      width: imageStyle.width?.value,
+      height: imageStyle.height?.value,
+      memCacheWidth: imageStyle.width?.value != null ? (imageStyle.width!.value * pixelRatio).toInt() : null,
+      memCacheHeight: imageStyle.height?.value != null ? (imageStyle.width!.value * pixelRatio).toInt() : null,
+      imageBuilder: (context, imageProvider) {
+        if (imageStreamListener != null) {
+          imageProvider.resolve(ImageConfiguration.empty).addListener(imageStreamListener!);
+        }
+        Image imageView = Image(
+          image: ResizeImage.resizeIfNeeded((screenWidth * pixelRatio).toInt(), null, imageProvider),
+        );
+        return imageView;
+      },
+      errorListener: (error) {
+        imageStreamListener?.onError?.call(error, null);
+      },
+      fit: BoxFit.fill,
+      errorWidget: (ctx, error, stackTrace) {
+        return Text(
+          element.alt ?? "",
+          style: context.styledElement!.style.generateTextStyle(),
+        );
+      },
+    );
     return CssBoxWidget(
       style: imageStyle,
       childIsReplaced: true,
-      child: Image.network(
-        element.src,
-        width: imageStyle.width?.value,
-        height: imageStyle.height?.value,
-        fit: BoxFit.fill,
-        headers: networkHeaders,
-        errorBuilder: (ctx, error, stackTrace) {
-          return Text(
-            element.alt ?? "",
-            style: context.styledElement!.style.generateTextStyle(),
-          );
-        },
-      ),
+      child: image,
     );
   }
 }

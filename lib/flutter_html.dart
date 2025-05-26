@@ -1,4 +1,4 @@
-library;
+library flutter_html;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_html/src/html_parser.dart';
@@ -10,7 +10,6 @@ import 'package:html/dom.dart' as dom;
 export 'package:flutter_html/src/html_parser.dart';
 //export src for advanced custom render uses (e.g. casting context.tree)
 export 'package:flutter_html/src/anchor.dart';
-export 'package:flutter_html/src/tree/image_element.dart';
 export 'package:flutter_html/src/tree/interactable_element.dart';
 export 'package:flutter_html/src/tree/replaced_element.dart';
 export 'package:flutter_html/src/tree/styled_element.dart';
@@ -59,6 +58,7 @@ class Html extends StatefulWidget {
     this.onlyRenderTheseTags,
     this.doNotRenderTheseTags,
     this.style = const {},
+    this.imageStreamListener,
   })  : documentElement = null,
         assert(data != null),
         _anchorKey = anchorKey ?? GlobalKey();
@@ -75,6 +75,7 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
+    this.imageStreamListener,
   })  : data = null,
         assert(document != null),
         documentElement = document!.documentElement,
@@ -92,6 +93,7 @@ class Html extends StatefulWidget {
     this.doNotRenderTheseTags,
     this.onlyRenderTheseTags,
     this.style = const {},
+    this.imageStreamListener,
   })  : data = null,
         assert(documentElement != null),
         _anchorKey = anchorKey ?? GlobalKey();
@@ -128,6 +130,9 @@ class Html extends StatefulWidget {
   /// by default, so you should include those in this set if you want any
   /// of your html to render.
   final Set<String>? onlyRenderTheseTags;
+
+  //图片加载回调
+  final ImageStreamListener? imageStreamListener;
 
   /// A list of [HtmlExtension]s that add additional capabilities to flutter_html
   /// See the [HtmlExtension] class for more details.
@@ -175,6 +180,7 @@ class _HtmlState extends State<Html> {
       extensions: widget.extensions,
       doNotRenderTheseTags: widget.doNotRenderTheseTags,
       onlyRenderTheseTags: widget.onlyRenderTheseTags,
+      imageStreamListener: widget.imageStreamListener,
     );
   }
 }

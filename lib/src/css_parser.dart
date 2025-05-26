@@ -1220,6 +1220,8 @@ class ExpressionMapping {
       return LengthOrPercent(double.parse(value.text));
     } else if (value is css.EmTerm) {
       return LengthOrPercent(double.parse(value.text), Unit.em);
+    } else if (value is css.PercentageTerm) {
+      return LengthOrPercent(double.parse(value.text), Unit.percent);
     } else if (value is css.RemTerm) {
       return LengthOrPercent(double.parse(value.text), Unit.rem);
       // TODO there are several other available terms processed by the CSS parser

@@ -41,6 +41,7 @@ class HtmlParser extends StatefulWidget {
   final Set<String>? onlyRenderTheseTags;
   final OnTap? internalOnAnchorTap;
   final Html? root;
+  final ImageStreamListener? imageStreamListener;
 
   HtmlParser({
     required super.key,
@@ -54,6 +55,7 @@ class HtmlParser extends StatefulWidget {
     required this.doNotRenderTheseTags,
     required this.onlyRenderTheseTags,
     this.root,
+    this.imageStreamListener,
   }) : internalOnAnchorTap = onAnchorTap ??
             (key != null ? _handleAnchorTap(key, onLinkTap) : onLinkTap);
 
