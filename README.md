@@ -4,6 +4,14 @@
 [![GitHub Actions](https://github.com/Sub6Resources/flutter_html/actions/workflows/test.yml/badge.svg)](https://github.com/Sub6Resources/flutter_html/actions)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/Sub6Resources/flutter_html/blob/master/LICENSE)
 
+===========================================
+## flutter_html的folk。
+1. 增加图片加载回调等功能。
+2. 解决处理表格展示的各种bug，
+3. 解决处理视频展示的各种bug
+   
+===========================================
+
 A Flutter widget for rendering HTML and CSS as Flutter widgets.
 
 ```dart
