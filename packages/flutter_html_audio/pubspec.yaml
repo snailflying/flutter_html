@@ -1,17 +1,18 @@
 name: flutter_html_audio
 description: This extension package allows the <audio> tag to be rendered using the flutter_html package
-version: 3.0.0
+version: 3.0.0-beta.2
 homepage: https://github.com/Sub6Resources/flutter_html
 
 environment:
-  sdk: ">=3.2.0 <4.0.0"
-  flutter: ">=3.0.0"
+  sdk: ">=2.12.0 <4.0.0"
+  flutter: ">=2.2.0"
 
 dependencies:
   flutter:
     sdk: flutter
   html: '>=0.15.0 <1.0.0'
-  flutter_html: ^3.0.0
+  flutter_html:
+    path: ../../../html
   video_player: '>=2.2.8 <3.0.0'
   chewie_audio: ^1.5.0
 
@@ -21,10 +22,11 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 funding:
-  - https://github.com/sponsors/Sub6Resources
+  - https://opencollective.com/flutter_html
 
 topics:
   - html
   - css
   - audio
   - layout
+  - flutter_html

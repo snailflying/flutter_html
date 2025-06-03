@@ -11,7 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   html: '>=0.15.0 <1.0.0'
-  flutter_html: ^3.0.0
+  flutter_html:
+    path: ../../../html
   flutter_math_fork: '>=0.7.0 <1.0.0'
 
 dev_dependencies:
@@ -20,10 +21,11 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 funding:
-  - https://github.com/sponsors/Sub6Resources
+  - https://opencollective.com/flutter_html
 
 topics:
   - html
   - latex
   - math
   - tex
+  - flutter_html

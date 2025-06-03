@@ -11,7 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   html: '>=0.15.0 <1.0.0'
-  flutter_html: ^3.0.0
+  flutter_html:
+    path: ../../../html
   video_player: '>=2.8.3 <3.0.0'
   chewie: '1.7.5'
 
@@ -21,10 +22,11 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 funding:
-  - https://github.com/sponsors/Sub6Resources
+  - https://opencollective.com/flutter_html
 
 topics:
   - html
   - css
   - video
   - widgets
+  - flutter_html

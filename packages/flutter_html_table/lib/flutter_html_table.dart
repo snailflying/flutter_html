@@ -118,19 +118,17 @@ class TableHtmlExtension extends HtmlExtension {
   @override
   InlineSpan build(ExtensionContext context) {
     if (context.elementName == "table") {
+      //TODO: 去掉CssBoxWidget，解决table撑不满的bug。by大强
       return WidgetSpan(
-        child: CssBoxWidget(
-          style: context.style!,
-          child: LayoutBuilder(
-            builder: (_, constraints) {
-              return _layoutCells(
-                context.styledElement as TableElement,
-                context.builtChildrenMap!,
-                context,
-                constraints,
-              );
-            },
-          ),
+        child: LayoutBuilder(
+          builder: (_, constraints) {
+            return _layoutCells(
+              context.styledElement as TableElement,
+              context.builtChildrenMap!,
+              context,
+              constraints,
+            );
+          },
         ),
       );
     }

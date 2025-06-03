@@ -10,8 +10,9 @@ import 'package:html/dom.dart' as html;
 
 class OnImageTapExtension extends ImageBuiltIn {
   final OnTap onImageTap;
+  final OnTap? onLongPressImageTap;
 
-  OnImageTapExtension({required this.onImageTap});
+  OnImageTapExtension({required this.onImageTap, this.onLongPressImageTap});
 
   @override
   Set<String> get supportedTags => {"img"};
@@ -29,8 +30,7 @@ class OnImageTapExtension extends ImageBuiltIn {
   }
 
   @override
-  StyledElement prepare(
-      ExtensionContext context, List<StyledElement> children) {
+  StyledElement prepare(ExtensionContext context, List<StyledElement> children) {
     return ImageTapExtensionElement(
       node: html.Element.tag("img-tap"),
       style: Style(),
@@ -72,6 +72,15 @@ class OnImageTapExtension extends ImageBuiltIn {
               actualImage.attributes,
               actualImage.element,
             );
+          },
+          onLongPress: () {
+            if (onLongPressImageTap != null) {
+              onLongPressImageTap!(
+                actualImage.attributes['src'],
+                actualImage.attributes,
+                actualImage.element,
+              );
+            }
           },
         );
       }),
